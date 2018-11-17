@@ -41,12 +41,58 @@ def build_argparser():
                         type=str)
     parser.add_argument("--labels", help="Labels mapping file", default=None, type=str)
     parser.add_argument("-pt", "--prob_threshold", help="Probability threshold for detections filtering",
-                        default=0.4, type=float)
+                        default=0.5, type=float)
 
     return parser
 
 
+# output: sklearn.cluster.MeanShift() clustering object
+def bclassify():
+    import numpy as np
+    from sklearn.decomposition import PCA
+    import sklearn.cluster
+    import pandas as pd
+    import os
+    import imageio
+    import matplotlib.pyplot as plt
+    from sklearn.cluster import MeanShift
+	
+    l = []
+    for fname in os.listdir("imagesselected2/"):
+        l.append(np.array(imageio.imread("imagesselected2/"+fname)).flatten())
+    data = np.array(l)
+    data = data/255
+	
+    def perform_pca_k(data, k):
+        pca = PCA(n_components=k)
+        principalComponents = pca.fit_transform(data)
+        pca_df = pd.DataFrame(data = principalComponents, 
+		                           columns = ["pc"+str(i) for i in range(1,k+1)])
+        return pca, pca_df
+    #pca, pca_df=perform_pca_k(data, 4)
+    #print("explained_variance: ", pca.explained_variance_ratio_)
+    #print("resulting df: ")
+    #print(pca_df)
+	
+    def perform_pca_ratio(data, ratio):
+        pca = PCA(ratio)
+        principalComponents = pca.fit_transform(data)
+        pca_df = pd.DataFrame(data = principalComponents, 
+		                           columns = ["pc"+str(i) for i in range(1,pca.n_components_+1)])
+        return pca, pca_df
+    pca, pca_df = perform_pca_ratio(data, 0.9)
+    #print("explained_variance: ", pca.explained_variance_ratio_)
+    #print("resulting df: ")
+    #print(pca_df)
+	
+    clustering = MeanShift(bandwidth=23,cluster_all=False).fit(data)
+    print(clustering.labels_)
+    return clustering, pca
+
+
 def main():
+	#get freshly trained Clustering and PCA for inference
+    clustering, pca = bclassify()
     #line for log configuration
     log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 	#parser for the arguments
@@ -76,7 +122,7 @@ def main():
             sys.exit(1)
 	# check if the input and output of model is the right format, here we expect just one input (one image) and one output type (bounding boxes)
     assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
-    #assert len(net.outputs) == 1, "Demo supports only single output topologies"
+    assert len(net.outputs) == 1, "Demo supports only single output topologies"
 	# start the iterator on the input nodes
     input_blob = next(iter(net.inputs))
     print(input_blob)
@@ -111,7 +157,6 @@ def main():
 	#open the camera
     ret, frame = cap.read()
 	#if open, we loop over the incoming frames
-    i = 1
     while cap.isOpened():
         #we get the frame 
         ret, frame = cap.read()
@@ -152,6 +197,7 @@ def main():
 				#define bottom right corner row value
                 ymax = int(obj[6] * initial_h)
                 
+
                 deltax = int((xmax - xmin)/2)
                 deltay = int((ymax - ymin)/2)
                 xmin = xmin - deltax
@@ -159,27 +205,20 @@ def main():
                 ymin = ymin + deltay
                 ymax = ymax + deltay
                 
+                
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                gray = gray[ymin:ymax,xmin:xmax]
-                
-                ret, thresh = cv2.threshold(gray,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-                
-                minSize = 128*128
-                if thresh is not None and thresh.size > minSize and thresh.shape[0] > int(thresh.shape[1]/2) and thresh.shape[0] > int(thresh.shape[1]/2):
-                	#print(thresh.shape)
-                	i = i+1
+                gray = gray[ymin:ymax,xmin:xmax]/255
+                #print(gray)
+                if gray.size > 0:
                 	gray = cv2.resize(gray,(128,100))
+                	class_id = int(clustering.predict(gray.reshape(1,-1))[0])
+                	#print(class_id)
                 	#cv2.imshow("littleframe",gray)
-                	cv2.imwrite("images3/image"+str(i)+'.png',gray)
-                
-                # Draw box and label and class_id
-                # color = (min(class_id * 12.5, 255), min(class_id * 7, 255), min(class_id * 5, 255))
-                rd = np.random.randint(0,2)
-                color = (rd*255,rd*255,rd*255)
-                cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
-                det_label = labels_map[class_id] if labels_map else str(class_id)
-                cv2.putText(frame, det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7),
-                                cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+                	color = (min(class_id * 12.5, 255), min(class_id * 7, 255), min(class_id * 5, 255))
+                	cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
+                	det_label = labels_map[class_id] if labels_map else str(class_id)
+                	cv2.putText(frame, det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7),
+		                            cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
                     
 					
             # Draw performance stats
@@ -190,7 +229,7 @@ def main():
             
        
 		# show the result image
-        #cv2.imshow("Detection Results", frame)
+        cv2.imshow("Detection Results", frame)
        
         key = cv2.waitKey(1)
         if key == 27:
