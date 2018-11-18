@@ -1,5 +1,5 @@
 # bclassified
-classifying beards of the champions
+**classifying beards of the champions**
 
 tied for 2nd place of the Intel Challenge at the Hackatum Hackathon 2018 (https://devpost.com/software/bclassified)
 
