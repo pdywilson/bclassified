@@ -168,9 +168,10 @@ def main():
                 if thresh is not None and thresh.size > minSize and thresh.shape[0] > int(thresh.shape[1]/2) and thresh.shape[0] > int(thresh.shape[1]/2):
                 	#print(thresh.shape)
                 	i = i+1
-                	gray = cv2.resize(gray,(128,100))
-                	#cv2.imshow("littleframe",gray)
-                	cv2.imwrite("images3/image"+str(i)+'.png',gray)
+                	if i%5 == 0:
+                	    gray = cv2.resize(gray,(128,100))
+                	    #cv2.imshow("littleframe",gray)
+                	    cv2.imwrite("images3/image"+str(i)+'.png',gray)
                 
                 # Draw box and label and class_id
                 # color = (min(class_id * 12.5, 255), min(class_id * 7, 255), min(class_id * 5, 255))

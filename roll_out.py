@@ -55,11 +55,15 @@ def bclassify():
     import os
     import imageio
     import matplotlib.pyplot as plt
-    from sklearn.cluster import MeanShift
+    from sklearn.cluster import MeanShift, KMeans
 	
+    c = 0
     l = []
-    for fname in os.listdir("imagesselected2/"):
-        l.append(np.array(imageio.imread("imagesselected2/"+fname)).flatten())
+    for fname in os.listdir("images3/"):
+        l.append(np.array(imageio.imread("images3/"+fname)).flatten())
+        c = c + 1
+        if c>800:
+            break
     data = np.array(l)
     data = data/255
 	
@@ -80,19 +84,21 @@ def bclassify():
         pca_df = pd.DataFrame(data = principalComponents, 
 		                           columns = ["pc"+str(i) for i in range(1,pca.n_components_+1)])
         return pca, pca_df
-    pca, pca_df = perform_pca_ratio(data, 0.9)
+    #pca, pca_df = perform_pca_ratio(data, 0.9)
     #print("explained_variance: ", pca.explained_variance_ratio_)
     #print("resulting df: ")
     #print(pca_df)
 	
-    clustering = MeanShift(bandwidth=23,cluster_all=False).fit(data)
+    #clustering = MeanShift(bandwidth=23,cluster_all=False).fit(data)
+    clustering = KMeans(n_clusters=10, random_state=420).fit(data)
     print(clustering.labels_)
-    return clustering, pca
+    return clustering
 
 
 def main():
 	#get freshly trained Clustering and PCA for inference
-    clustering, pca = bclassify()
+    clustering = bclassify()
+    colors = [(0,0,0),(0,255,0),(0,0,255),(0,0,255),(255,255,255),(255,0,0),(255,0,255),(0,0,255),(0,125,255),(0,255,255)]
     #line for log configuration
     log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 	#parser for the arguments
@@ -211,13 +217,15 @@ def main():
                 #print(gray)
                 if gray.size > 0:
                 	gray = cv2.resize(gray,(128,100))
+                	
                 	class_id = int(clustering.predict(gray.reshape(1,-1))[0])
                 	#print(class_id)
                 	#cv2.imshow("littleframe",gray)
-                	color = (min(class_id * 12.5, 255), min(class_id * 7, 255), min(class_id * 5, 255))
-                	cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
-                	det_label = labels_map[class_id] if labels_map else str(class_id)
-                	cv2.putText(frame, det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7),
+                	color = colors[class_id]
+                	rect = cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 7)
+                	#rect_filled = cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, cv2.FILLED)
+                	#cv2.addWeighted(rect, 0.5, rect_filled, 0.5, 0)
+                	cv2.putText(frame, str(class_id) + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7),
 		                            cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
                     
 					
