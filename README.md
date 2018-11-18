@@ -1,7 +1,7 @@
 # bclassified
 **classifying beards of the champions**
 
-tied for 2nd place of the Intel Challenge at the Hackatum Hackathon 2018 (https://devpost.com/software/bclassified)
+🏆 tied for 2nd place of the Intel Challenge at the Hackatum Hackathon 2018 (https://devpost.com/software/bclassified)
 
 ## Usage
 First install openVINO (This works on Ubuntu 16 (!) or Windows 10 only.)
