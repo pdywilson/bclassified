@@ -1,11 +1,13 @@
 # bclassified
+
+![bclassifiedpingpong.gif](bclassifiedpingpong.gif)
+
 **classifying beards of the champions**
 
 🏆 won 2nd place prize in the Intel Challenge at the Hackatum Hackathon 2018 (https://devpost.com/software/bclassified)
 
 ![gallery.jpg](gallery.jpg)
 
-![bclassifiedpingpong.gif](bclassifiedpingpong.gif)
 
 ## Usage
 First install openVINO (This works on Ubuntu 16 (!) or Windows 10 only.)
