@@ -5,6 +5,8 @@
 
 ![gallery.jpg](gallery.jpg)
 
+![bclassified.mp4](bclassified.mp4)
+
 ## Usage
 First install openVINO (This works on Ubuntu 16 (!) or Windows 10 only.)
 
