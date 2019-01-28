@@ -5,7 +5,7 @@
 
 ![gallery.jpg](gallery.jpg)
 
-![bclassified.mp4](bclassified.mp4)
+![bclassifiedpingpong.gif](bclassifiedpingpong.gif)
 
 ## Usage
 First install openVINO (This works on Ubuntu 16 (!) or Windows 10 only.)
